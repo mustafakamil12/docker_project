@@ -1,0 +1,92 @@
+version: "3"  # Specify the version of the Docker Compose file format
+
+services:
+  redis:
+    image: redis:alpine  # Use the Redis image with the Alpine Linux version for lightweight setup
+    networks:
+      - frontend  # Connect the Redis container to the frontend network
+    deploy:
+      replicas: 1  # Deploy a single replica of the Redis service
+      update_config:
+        parallelism: 2  # Allow up to 2 tasks to update simultaneously
+        delay: 10s  # Wait 10 seconds between updates of tasks
+      restart_policy:
+        condition: on-failure  # Restart the container only if it fails
+
+  db:
+    image: postgres  # Use the official PostgreSQL image
+    volumes:
+      - db-data:/var/lib/postgresql/data  # Mount the db-data volume to persist database data
+    networks:
+      - backend  # Connect the PostgreSQL container to the backend network
+    deploy:
+      placement:
+        constraints: [node.role == manager]  # Ensure the db service runs only on manager nodes
+
+  vote:
+    image: dockersamples/examplevotingapp_vote:before  # Use a specific image for the voting app
+    ports:
+      - 5000:80  # Map port 5000 on the host to port 80 in the container
+    networks:
+      - frontend  # Connect the voting app container to the frontend network
+    depends_on:
+      - redis  # Ensure the Redis service is started before the voting app
+    deploy:
+      replicas: 2  # Deploy two replicas of the voting app
+      update_config:
+        parallelism: 2  # Allow up to 2 tasks to update simultaneously
+      restart_policy:
+        condition: on-failure  # Restart the container only if it fails
+
+  result:
+    image: dockersamples/examplevotingapp_result:before  # Use a specific image for the result app
+    ports:
+      - 5001:80  # Map port 5001 on the host to port 80 in the container
+    networks:
+      - backend  # Connect the result app container to the backend network
+    depends_on:
+      - db  # Ensure the db service is started before the result app
+    deploy:
+      replicas: 1  # Deploy a single replica of the result app
+      update_config:
+        parallelism: 2  # Allow up to 2 tasks to update simultaneously
+        delay: 10s  # Wait 10 seconds between updates of tasks
+      restart_policy:
+        condition: on-failure  # Restart the container only if it fails
+
+  worker:
+    image: dockersamples/examplevotingapp_worker  # Use a specific image for the worker service
+    networks:
+      - frontend  # Connect the worker container to the frontend network
+      - backend  # Connect the worker container to the backend network
+    depends_on:
+      - db  # Ensure the db service is started before the worker service
+    deploy:
+      mode: replicated  # Use replicated mode for deployment
+      replicas: 1  # Deploy a single replica of the worker service
+      labels: [APP=VOTING]  # Add a label to the service
+      restart_policy:
+        condition: on-failure  # Restart the container only if it fails
+        delay: 10s  # Wait 10 seconds before restarting the container
+        max_attempts: 3  # Try to restart the container up to 3 times
+        window: 120s  # Within a 120-second time window
+      placement:
+        constraints: [node.role == manager]  # Ensure the worker service runs only on manager nodes
+
+  visualizer:
+    image: dockersamples/visualizer:stable  # Use a specific image for the visualizer tool
+    ports:
+      - "8080:8080"  # Map port 8080 on the host to port 8080 in the container
+    stop_grace_period: 1m30s  # Set a grace period of 1 minute and 30 seconds to stop the container
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock"  # Mount the Docker socket to communicate with the Docker daemon
+    deploy:
+      placement:
+        constraints: [node.role == manager]  # Ensure the visualizer runs only on manager nodes
+
+networks:
+  frontend:  # Define the frontend network
+  backend:   # Define the backend network
+
+volumes:
+  db-data:  # Define the volume to persist PostgreSQL data
