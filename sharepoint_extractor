@@ -1,45 +1,20 @@
-from selenium import webdriver
-from selenium.webdriver.common.by import By
-from selenium.webdriver.common.keys import Keys
-import time
+import requests
+from requests_ntlm import HttpNtlmAuth
 
-# Path to ChromeDriver
-chromedriver_path = '/path/to/chromedriver'
+# SharePoint site URL
+site_url = "https://your-company.sharepoint.com/sites/your-site"
 
-# Initialize the Chrome WebDriver
-driver = webdriver.Chrome(executable_path=chromedriver_path)
+# Authentication
+username = "your-domain\\your-username"
+password = "your-password"
 
-# Open the SharePoint login page
-driver.get('https://your-sharepoint-site-url')
+# Provide path to your company's internal certificate
+cert_path = "/path/to/your/certificate.crt"
 
-# Allow time for the page to load
-time.sleep(2)
+# For NTLM Authentication with SSL certificate
+session = requests.Session()
+session.auth = HttpNtlmAuth(username, password)
+session.verify = cert_path  # Or set to False to bypass verification
 
-# Locate and fill the username field (assuming Office 365 login page)
-username_field = driver.find_element(By.ID, 'i0116')
-username_field.send_keys('your-email@example.com')
-username_field.send_keys(Keys.RETURN)
-
-# Allow time for the next page to load
-time.sleep(2)
-
-# Locate and fill the password field
-password_field = driver.find_element(By.ID, 'i0118')
-password_field.send_keys('your-password')
-password_field.send_keys(Keys.RETURN)
-
-# Allow time for authentication (handle any MFA if necessary)
-time.sleep(5)
-
-# Navigate to the specific SharePoint .aspx page
-driver.get('https://your-sharepoint-site-url/sites/YourSite/Pages/YourPage.aspx')
-
-# Allow time for the page to load
-time.sleep(2)
-
-# Extract the data you need (example: getting the page content)
-page_content = driver.find_element(By.TAG_NAME, 'body').text
-print(page_content)
-
-# Close the browser
-driver.quit()
+response = session.get(site_url)
+print(response.content)
