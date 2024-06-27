@@ -1,15 +1,17 @@
 from office365.sharepoint.client_context import ClientContext
 from office365.runtime.auth.user_credential import UserCredential
 
+# Path to your company's CA certificate file
+cert_path = "/path/to/your/company-ca-cert.pem"
+
 # Replace with your SharePoint site URL and credentials
 site_url = "https://your-company.sharepoint.com/sites/yoursite"
 username = "your-email@your-company.com"
 password = "your-password"
 
-# Authenticate
+# Authenticate with custom SSL certificate verification
 ctx = ClientContext(site_url).with_credentials(UserCredential(username, password))
-
-# Example: Retrieve the site title
+ctx.execute_query_with(request_options={'verify': cert_path})
 web = ctx.web
 ctx.load(web)
 ctx.execute_query()
