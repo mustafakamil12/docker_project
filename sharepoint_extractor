@@ -1,20 +1,16 @@
-import requests
-from requests_ntlm import HttpNtlmAuth
+from office365.sharepoint.client_context import ClientContext
+from office365.runtime.auth.user_credential import UserCredential
 
-# SharePoint site URL
-site_url = "https://your-company.sharepoint.com/sites/your-site"
-
-# Authentication
-username = "your-domain\\your-username"
+# Replace with your SharePoint site URL and credentials
+site_url = "https://your-company.sharepoint.com/sites/yoursite"
+username = "your-email@your-company.com"
 password = "your-password"
 
-# Provide path to your company's internal certificate
-cert_path = "/path/to/your/certificate.crt"
+# Authenticate
+ctx = ClientContext(site_url).with_credentials(UserCredential(username, password))
 
-# For NTLM Authentication with SSL certificate
-session = requests.Session()
-session.auth = HttpNtlmAuth(username, password)
-session.verify = cert_path  # Or set to False to bypass verification
-
-response = session.get(site_url)
-print(response.content)
+# Example: Retrieve the site title
+web = ctx.web
+ctx.load(web)
+ctx.execute_query()
+print("Site title: {0}".format(web.properties['Title']))
