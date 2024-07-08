@@ -1,1 +1,43 @@
-https://github.com/vgrem/Office365-REST-Python-Client/tree/master/examples/sharepoint/files
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+import time
+
+# Replace with the path to your WebDriver
+driver_path = '/path/to/chromedriver'
+driver = webdriver.Chrome(executable_path=driver_path)
+
+# URL of the SharePoint page
+url = 'https://yourcompany.sharepoint.com/sites/YourSite/YourPage.aspx'
+
+# Open the SharePoint page
+driver.get(url)
+
+# If you need to log in, do it here
+username = 'your_username'
+password = 'your_password'
+
+# Find the username field and enter the username
+username_field = driver.find_element(By.ID, 'i0116')
+username_field.send_keys(username)
+driver.find_element(By.ID, 'idSIButton9').click()
+
+# Wait for password field to be present and enter the password
+WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.ID, 'i0118')))
+password_field = driver.find_element(By.ID, 'i0118')
+password_field.send_keys(password)
+driver.find_element(By.ID, 'idSIButton9').click()
+
+# Wait for the login process to complete, adjust the wait time if necessary
+time.sleep(10)
+
+# Now, you can start extracting data from the page
+# For example, finding elements by their XPath and getting their text
+elements = driver.find_elements(By.XPATH, 'xpath_of_elements_you_want_to_extract')
+for element in elements:
+    print(element.text)
+
+# Close the browser
+driver.quit()
+
